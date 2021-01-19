@@ -1,0 +1,31 @@
+#install.packages(c("dplyr", "readxl"))
+
+library(dplyr)
+library(readxl)
+land_area = read_xlsx("D:/강의자료/감정평가사연수/31기/land_data_area.xlsx")
+land_price = read_xlsx("D:/강의자료/감정평가사연수/31기/land_data_price.xlsx")
+
+A = left_join(x = land_area, y = land_price, by = c("고유번호" = "PNU"))
+B = right_join(x = land_area, y = land_price, by = c("고유번호" = "PNU"))
+C = full_join(x = land_area, y = land_price, by = c("고유번호" = "PNU"))
+D = inner_join(x = land_area, y = land_price, by = c("고유번호" = "PNU"))
+E = semi_join(x = land_area, y = land_price, by = c("고유번호"= "PNU")) #x
+F = anti_join(x = land_area, y = land_price, by = c("고유번호" = "PNU")) #x
+
+
+land_area = land_area %>% rename(PNU = 고유번호)
+G = left_join(x = land_area, y = land_price, by = "PNU")
+land_area = land_area %>% rename(PRICE = 면적)
+H = left_join(x = land_area, y = land_price, by = "PNU")
+
+land_area = read_xlsx("D:/강의자료/감정평가사연수/31기/land_data_area.xlsx")
+land_price = read_xlsx("D:/강의자료/감정평가사연수/31기/land_data_price.xlsx")
+head(land_area)
+A1 = data.frame(고유번호 = c("4100010000100010001", "4100010000100010001", "4100010000100010001"), 
+                면적 = c(400, 100, 1000))
+land_area = rbind(land_area, A1)
+A2 = data.frame(PNU = c("4100010000100010001"), 
+                PRICE = c(258000))
+land_price = rbind(land_price, A2)
+AA = left_join(x = land_area, y = land_price, by = c("고유번호" = "PNU"))
+AA = AA[!duplicated(AA$고유번호),]
