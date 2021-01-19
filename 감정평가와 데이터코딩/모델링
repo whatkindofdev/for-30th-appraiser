@@ -1,0 +1,83 @@
+##Package Installation & Loading-------------------------------------------------------------------------------------------------------
+install.packages(c("plyr", "dplyr", "readxl", "writexl", "ggplot2"))
+
+library(plyr)
+library(dplyr)
+library(readxl); library(writexl)
+library(ggplot2)
+#=======================================================================================================================
+
+
+##Data Import (1. 또는 2. 중 하나를 실행-----------------------------------------------------------------------------------------------------------
+#1. 
+mydata = read_xlsx("F:/강의자료/감정평가사연수/31기/강원도_임야_샘플.xlsx") #각자의 경로에 맞게 수정하여 사용
+
+#2. 
+getwd()
+setwd("F:/강의자료/감정평가사연수/31기/") #각자의 경로에 맞게 수정하여 사용
+mydata = read_xlsx("강원도_임야_샘플.xlsx")
+#========================================================================================================================
+
+
+##Data Preprocessing-----------------------------------------------------------------------------------------------------
+#1. Data Pre-setting
+str(mydata)
+summary(mydata$USE)
+summary(mydata$ZONE)
+summary(factor(mydata$USE))
+summary(factor(mydata$ZONE))
+
+mydata = mydata[mydata$USE != "단독주택" & mydata$USE != "도로등", ]       #base
+mydata = mydata %>% filter(!(USE %in% c("단독주택", "도로등")))            #dplyr
+mydata = mydata[mydata$ZONE == "계획관리지역",]
+
+#2. Factorizing the character variables
+summary(mydata$SLOPE)
+summary(factor(mydata$SLOPE))
+mydata$SLOPE = factor(mydata$SLOPE)
+mydata$SLOPE = relevel(mydata$SLOPE, ref = '급경사')
+summary(mydata$SLOPE)
+
+mydata$ROAD1 = mydata$ROAD
+summary(mydata$ROAD1)
+summary(factor(mydata$ROAD1))
+mydata$ROAD1 = factor(mydata$ROAD1)
+summary(mydata$ROAD1)
+
+#3. 면적당 단가컬럼 생성 (3.1 또는 3.2 중 하나를 실행)
+#3.1 base
+mydata$UNIT_PRICE = round(mydata$PRICE/mydata$SIZE,0)                      #면적당 단가
+#3.2 dplyr 
+mydata = mydata %>% mutate(UNIT_PRICE = round(PRICE/SIZE, 0))
+
+str(mydata)
+#========================================================================================================================
+
+
+##Modeling --------------------------------------------------------------------------------------------------------------
+form1 = log(UNIT_PRICE) ~ ROAD1 + log(SIZE) + SLOPE        #개별요인
+M = lm(form1, data = mydata)
+summary(M)
+
+form2 = log(UNIT_PRICE) ~ ROAD1 + log(SIZE)                #개별요인 again
+M = lm(form2, data = mydata)
+summary(M)
+
+form3 = UNIT_PRICE ~ ROAD1 + SIZE                  #가격추정
+M = lm(form3, data = mydata)
+summary(M)
+#========================================================================================================================
+
+##Prediction ------------------------------------------------------------------------------------------------------------
+#회귀추정
+mydata$Yhat = round(fitted(M, mydata),0)
+
+#결과 시각화
+ggplot(data = mydata, aes(x = UNIT_PRICE, y = Yhat)) + geom_point() + 
+  geom_smooth(method = "lm", col = "red")
+str(mydata)
+#========================================================================================================================
+
+##Data Exporting---------------------------------------------------------------------------------------------------------
+write_xlsx(mydata, "G:/강의자료/감정평가사연수/31기/강원도_임야_추정결과.xlsx")
+#========================================================================================================================
